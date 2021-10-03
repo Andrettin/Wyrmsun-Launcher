@@ -75,11 +75,11 @@ int main(int argc, char **argv)
 		}
 
 		ISteamUserStats *user_stats = SteamUserStats();
-		if (user_stats == nullptr) {
+		if (user_stats != nullptr) {
+			user_stats->RequestCurrentStats();
+		} else {
 			log_error("No Steam user information provided.");
 		}
-
-		user_stats->RequestCurrentStats();
 
 		QQmlApplicationEngine engine;
 
