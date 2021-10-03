@@ -1,5 +1,7 @@
 #include "process_manager.h"
 
+#include "steam/isteamuserstats.h"
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
@@ -114,6 +116,10 @@ int main(int argc, char **argv)
 		const QCursor qcursor(pixmap, hot_pos.x(), hot_pos.y());
 
 		QApplication::setOverrideCursor(qcursor);
+
+		if (SteamUserStats() == nullptr) {
+			throw std::runtime_error("No Steam user information provided.");
+		}
 
 		QQmlApplicationEngine engine;
 

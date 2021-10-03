@@ -10,8 +10,12 @@ cmake_minimum_required(VERSION 3.7.0)
 
 project(wyrmsun_launcher VERSION 1.0.0)
 
+set(STEAM_SDK_HEADER_DIR "" CACHE PATH "Where the public headers of the Steam SDK are located")
+set(STEAM_SDK_LIB "" CACHE FILEPATH "The path to the library file for the Steam SDK")
+
 include_directories(
 	src
+	${STEAM_SDK_HEADER_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -47,6 +51,7 @@ set(QT_LIBRARIES
 
 set(wyrmsun_launcher_LIBS
 	${QT_LIBRARIES}
+	${STEAM_SDK_LIB}
 )
 
 set(CMAKE_CXX_STANDARD 20)
