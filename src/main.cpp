@@ -74,9 +74,12 @@ int main(int argc, char **argv)
 			log_error("Failed to initialize the Steam API.");
 		}
 
-		if (SteamUserStats() == nullptr) {
+		ISteamUserStats *user_stats = SteamUserStats();
+		if (user_stats == nullptr) {
 			log_error("No Steam user information provided.");
 		}
+
+		user_stats->RequestCurrentStats();
 
 		QQmlApplicationEngine engine;
 
