@@ -34,6 +34,8 @@ set(wyrmsun_launcher_HDRS
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo" CACHE STRING "" FORCE)
 
+find_package(Boost 1.69.0 REQUIRED)
+
 #Qt5 modules
 #different modules have different licenses, make sure all modules used here are compatible with the LGPL
 set(CMAKE_AUTOMOC ON)
@@ -57,6 +59,11 @@ set(wyrmsun_launcher_LIBS
 	${QT_LIBRARIES}
 	${STEAM_SDK_LIB}
 )
+
+if(Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIRS})
+	add_definitions(-DBOOST_DATE_TIME_NO_LIB)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
