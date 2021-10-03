@@ -3,6 +3,7 @@
 #include "util.h"
 
 #include "steam/isteamuserstats.h"
+#include "steam/steam_api.h"
 
 #include <QApplication>
 #include <QDir>
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
 	init_output();
 
 	int result = 0;
+	bool initialized_steam = false;
 
 	try {
 		const std::filesystem::path root_path = std::filesystem::current_path();
@@ -67,6 +69,12 @@ int main(int argc, char **argv)
 		const QCursor qcursor(pixmap, hot_pos.x(), hot_pos.y());
 
 		QApplication::setOverrideCursor(qcursor);
+
+		initialized_steam = SteamAPI_Init();
+
+		if (!initialized_steam) {
+			log_error("Failed to initialize the Steam API.");
+		}
 
 		if (SteamUserStats() == nullptr) {
 			log_error("No Steam user information provided.");
@@ -97,6 +105,10 @@ int main(int argc, char **argv)
 	} catch (const std::exception &exception) {
 		report_exception(exception);
 		result = -1;
+	}
+
+	if (initialized_steam) {
+		SteamAPI_Shutdown();
 	}
 
 	clean_output();
