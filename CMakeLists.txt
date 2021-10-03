@@ -20,12 +20,15 @@ include_directories(
 )
 
 set(wyrmsun_launcher_SRCS
+	src/achievement_manager.cpp
 	src/main.cpp
 	src/launcher.rc
 )
 
 set(wyrmsun_launcher_HDRS
+	src/achievement_manager.h
 	src/process_manager.h
+	src/util.h
 )
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo" CACHE STRING "" FORCE)
