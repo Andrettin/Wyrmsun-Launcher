@@ -17,6 +17,7 @@ include_directories(
 
 set(wyrmsun_launcher_SRCS
 	src/main.cpp
+	src/launcher.rc
 )
 
 set(wyrmsun_launcher_HDRS
