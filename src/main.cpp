@@ -1,3 +1,5 @@
+#include "process_manager.h"
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
@@ -115,6 +117,9 @@ int main(int argc, char **argv)
 
 		QQmlApplicationEngine engine;
 
+		process_manager *process_manager = new ::process_manager;
+		engine.rootContext()->setContextProperty("process_manager", process_manager);
+
 		engine.addImportPath(root_path_qstr + "/libraries/qml");
 
 		QUrl url = QDir(root_path_qstr + "/interface/").absoluteFilePath("Launcher.qml");
@@ -128,6 +133,8 @@ int main(int argc, char **argv)
 		engine.load(url);
 
 		const int result = app.exec();
+
+		process_manager->deleteLater();
 
 		return result;
 	} catch (const std::exception &exception) {

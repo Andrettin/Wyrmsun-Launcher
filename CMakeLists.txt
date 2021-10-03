@@ -19,6 +19,10 @@ set(wyrmsun_launcher_SRCS
 	src/main.cpp
 )
 
+set(wyrmsun_launcher_HDRS
+	src/process_manager.h
+)
+
 set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo" CACHE STRING "" FORCE)
 
 #Qt5 modules
@@ -54,7 +58,7 @@ endif()
 
 # Compile launcher
 
-add_executable(wyrmsun_launcher WIN32 ${wyrmsun_launcher_SRCS})
+add_executable(wyrmsun_launcher WIN32 ${wyrmsun_launcher_SRCS} ${wyrmsun_launcher_HDRS})
 
 if (MSVC)
 	target_compile_options(wyrmsun_launcher PRIVATE /W4 /w44800 /wd4458)
