@@ -12,16 +12,49 @@
 
 #include <filesystem>
 
+static void init_output()
+{
+	const std::filesystem::path error_log_path = get_error_log_filepath();
+
+	if (std::filesystem::exists(error_log_path) && std::filesystem::file_size(error_log_path) > 1000000) {
+		std::filesystem::remove(error_log_path);
+	}
+
+	const std::u8string path_u8str = error_log_path.u8string();
+	const std::string path_str(path_u8str.begin(), path_u8str.end());
+
+	const FILE *error_log_file = freopen(path_str.c_str(), "a", stderr);
+	if (error_log_file == nullptr) {
+		log_error("Failed to create error log.");
+	}
+}
+
+static void clean_output()
+{
+	std::cerr.clear();
+	fclose(stderr);
+
+	const std::filesystem::path error_log_path = get_error_log_filepath();
+
+	if (std::filesystem::exists(error_log_path) && std::filesystem::file_size(error_log_path) == 0) {
+		std::filesystem::remove(error_log_path);
+	}
+}
+
 int main(int argc, char **argv)
 {
+	qInstallMessageHandler(log_qt_message);
+
+	QApplication app(argc, argv);
+	app.setApplicationName("Wyrmsun");
+	app.setOrganizationName("Wyrmsun");
+	app.setOrganizationDomain("andrettin.github.io");
+
+	init_output();
+
+	int result = 0;
+
 	try {
-		qInstallMessageHandler(log_qt_message);
-
-		QApplication app(argc, argv);
-		app.setApplicationName("Wyrmsun");
-		app.setOrganizationName("Wyrmsun");
-		app.setOrganizationDomain("andrettin.github.io");
-
 		const std::filesystem::path root_path = std::filesystem::current_path();
 		const QString root_path_qstr = QString::fromUtf8(reinterpret_cast<const char *>(root_path.u8string().c_str()));
 
@@ -36,7 +69,7 @@ int main(int argc, char **argv)
 		QApplication::setOverrideCursor(qcursor);
 
 		if (SteamUserStats() == nullptr) {
-			throw std::runtime_error("No Steam user information provided.");
+			log_error("No Steam user information provided.");
 		}
 
 		achievement_manager achievement_manager;
@@ -58,13 +91,15 @@ int main(int argc, char **argv)
 			}, Qt::QueuedConnection);
 		engine.load(url);
 
-		const int result = app.exec();
+		result = app.exec();
 
 		process_manager->deleteLater();
-
-		return result;
 	} catch (const std::exception &exception) {
 		report_exception(exception);
-		return -1;
+		result = -1;
 	}
+
+	clean_output();
+
+	return result;
 }

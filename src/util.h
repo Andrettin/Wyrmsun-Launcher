@@ -1,7 +1,10 @@
 #pragma once
 
+#include <QApplication>
 #include <QDateTime>
+#include <QStandardPaths>
 
+#include <filesystem>
 #include <iostream>
 
 constexpr const char *date_string_format = "yyyy.MM.dd hh:mm:ss";
@@ -84,4 +87,47 @@ inline void log_qt_message(QtMsgType type, const QMessageLogContext &context, co
 			log_error(log_message);
 			break;
 	}
+}
+
+inline std::filesystem::path get_user_data_path()
+{
+	std::filesystem::path path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString();
+	if (path.empty()) {
+		throw std::runtime_error("No user data path found.");
+	}
+
+	//ignore the organization name for the user data path, e.g. the path should be "[AppName]" and not "[OrganizationName]/[AppName]"
+	if (path.parent_path().filename() == QApplication::organizationName().toStdString()) {
+		path = path.parent_path().parent_path() / path.filename();
+	}
+
+	if (!std::filesystem::exists(path)) {
+		const bool success = std::filesystem::create_directories(path);
+		if (!success) {
+			throw std::runtime_error("Failed to create user data path: \"" + path.string() + "\".");
+		}
+	}
+
+	return path;
+}
+
+inline std::filesystem::path get_logs_path()
+{
+	const std::filesystem::path path = get_user_data_path() / "logs";
+
+	if (!std::filesystem::exists(path)) {
+		const bool success = std::filesystem::create_directories(path);
+		if (!success) {
+			throw std::runtime_error("Failed to create logs path: \"" + path.string() + "\".");
+		}
+	}
+
+	return path;
+}
+
+inline std::filesystem::path get_error_log_filepath()
+{
+	std::filesystem::path filepath = get_logs_path() / "launcher_error.log";
+	filepath.make_preferred();
+	return filepath;
 }

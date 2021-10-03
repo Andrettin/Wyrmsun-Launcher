@@ -4,21 +4,11 @@
 
 #include "steam/isteamuserstats.h"
 
-#include <QApplication>
 #include <QSettings>
-#include <QStandardPaths>
 
 std::filesystem::path achievement_manager::get_achievements_filepath()
 {
-	std::filesystem::path user_data_path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString();
-	if (user_data_path.empty()) {
-		throw std::runtime_error("No user data path found.");
-	}
-
-	//ignore the organization name for the user data path, e.g. the path should be "[AppName]" and not "[OrganizationName]/[AppName]"
-	if (user_data_path.parent_path().filename() == QApplication::organizationName().toStdString()) {
-		user_data_path = user_data_path.parent_path().parent_path() / user_data_path.filename();
-	}
+	const std::filesystem::path user_data_path = get_user_data_path();
 
 	std::filesystem::path filepath = user_data_path / "achievements.txt";
 	filepath.make_preferred();
@@ -46,13 +36,22 @@ void achievement_manager::check_achievements()
 
 		ISteamUserStats *user_stats = SteamUserStats();
 
+		if (user_stats == nullptr) {
+			throw std::runtime_error("No Steam user information provided.");
+		}
+
 		for (QString key : data.childKeys()) {
 			key.replace("_", "-");
 
 			const std::string key_str = key.toStdString();
 
 			bool unlocked = false;
-			user_stats->GetAchievement(key_str.c_str(), &unlocked);
+			const bool result = user_stats->GetAchievement(key_str.c_str(), &unlocked);
+
+			if (!result) {
+				log_error("Achievement \"" + key_str + "\" is not registered on Steam.");
+				continue;
+			}
 
 			if (!unlocked) {
 				user_stats->SetAchievement(key_str.c_str());
