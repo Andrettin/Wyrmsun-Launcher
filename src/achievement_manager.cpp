@@ -6,9 +6,6 @@
 
 #include <QSettings>
 
-#include <boost/interprocess/sync/file_lock.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
-
 std::filesystem::path achievement_manager::get_achievements_filepath()
 {
 	const std::filesystem::path user_data_path = get_user_data_path();
@@ -36,9 +33,6 @@ void achievement_manager::check_achievements()
 
 		const std::u8string achievements_filepath_u8str = achievements_filepath.u8string();
 		const std::string achievements_filepath_str(achievements_filepath_u8str.begin(), achievements_filepath_u8str.end());
-
-		boost::interprocess::file_lock file_lock(achievements_filepath_str.c_str());
-		boost::interprocess::sharable_lock<boost::interprocess::file_lock> lock(file_lock);
 
 		const QString achievements_filepath_qstr = QString::fromStdString(achievements_filepath_str);
 		const QSettings data(achievements_filepath_qstr, QSettings::IniFormat);

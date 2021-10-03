@@ -17,8 +17,9 @@ process_manager::~process_manager()
 
 void process_manager::start()
 {
-	this->process->start("wyrmsun", QStringList());
 	this->achievement_manager = std::make_unique<::achievement_manager>();
+	this->achievement_manager->check_achievements();
+	this->process->start("wyrmsun", QStringList());
 }
 
 void process_manager::on_finished(const int exit_code, const QProcess::ExitStatus exit_status)
@@ -29,5 +30,6 @@ void process_manager::on_finished(const int exit_code, const QProcess::ExitStatu
 	this->process->deleteLater();
 	this->process = nullptr;
 
+	this->achievement_manager->check_achievements();
 	this->achievement_manager.reset();
 }

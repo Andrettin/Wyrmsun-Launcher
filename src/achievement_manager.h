@@ -15,17 +15,23 @@ public:
 
 	achievement_manager()
 	{
+	}
+
+	~achievement_manager()
+	{
+		if (this->timer != nullptr) {
+			this->timer->deleteLater();
+		}
+	}
+
+	void start_continuous_checking()
+	{
 		this->timer = new QTimer(QApplication::instance());
 		QObject::connect(this->timer, &QTimer::timeout, [this]() {
 			this->check_achievements();
 		});
 		this->timer->setSingleShot(true);
 		this->timer->start(achievement_manager::initial_check_interval_ms);
-	}
-
-	~achievement_manager()
-	{
-		this->timer->deleteLater();
 	}
 
 	void check_achievements();
