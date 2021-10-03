@@ -49,7 +49,7 @@ void achievement_manager::check_achievements()
 			const std::string key_str = key.toStdString();
 
 			bool unlocked = false;
-			const bool result = user_stats->GetAchievement(key_str.c_str(), &unlocked);
+			bool result = user_stats->GetAchievement(key_str.c_str(), &unlocked);
 
 			if (!result) {
 				log_error("Achievement \"" + key_str + "\" is not registered on Steam.");
@@ -57,7 +57,11 @@ void achievement_manager::check_achievements()
 			}
 
 			if (!unlocked) {
-				user_stats->SetAchievement(key_str.c_str());
+				result = user_stats->SetAchievement(key_str.c_str());
+
+				if (!result) {
+					log_error("Failed to unlock achievement \"" + key_str + "\" on Steam.");
+				}
 			}
 		}
 
@@ -65,7 +69,7 @@ void achievement_manager::check_achievements()
 
 		this->previous_last_modified = last_modified;
 
-		if (this->timer->isSingleShot()) {
+		if (this->timer != nullptr && this->timer->isSingleShot()) {
 			//the initial check interval has gone by, now set the timer to recurrently check, with a smaller interval
 			this->timer->setSingleShot(false);
 			this->timer->start(achievement_manager::check_interval_ms);
