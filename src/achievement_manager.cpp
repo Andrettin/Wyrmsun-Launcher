@@ -61,6 +61,12 @@ void achievement_manager::check_achievements()
 		user_stats->StoreStats();
 
 		this->previous_last_modified = last_modified;
+
+		if (this->timer->isSingleShot()) {
+			//the initial check interval has gone by, now set the timer to recurrently check, with a smaller interval
+			this->timer->setSingleShot(false);
+			this->timer->start(achievement_manager::check_interval_ms);
+		}
 	} catch (const std::exception &exception) {
 		report_exception(exception);
 	}

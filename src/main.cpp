@@ -1,4 +1,3 @@
-#include "achievement_manager.h"
 #include "process_manager.h"
 #include "util.h"
 
@@ -54,7 +53,6 @@ int main(int argc, char **argv)
 	init_output();
 
 	int result = 0;
-	bool initialized_steam = false;
 
 	try {
 		const std::filesystem::path root_path = std::filesystem::current_path();
@@ -70,7 +68,7 @@ int main(int argc, char **argv)
 
 		QApplication::setOverrideCursor(qcursor);
 
-		initialized_steam = SteamAPI_Init();
+		const bool initialized_steam = SteamAPI_Init();
 
 		if (!initialized_steam) {
 			log_error("Failed to initialize the Steam API.");
@@ -79,8 +77,6 @@ int main(int argc, char **argv)
 		if (SteamUserStats() == nullptr) {
 			log_error("No Steam user information provided.");
 		}
-
-		achievement_manager achievement_manager;
 
 		QQmlApplicationEngine engine;
 
@@ -102,13 +98,13 @@ int main(int argc, char **argv)
 		result = app.exec();
 
 		process_manager->deleteLater();
+
+		if (initialized_steam) {
+			SteamAPI_Shutdown();
+		}
 	} catch (const std::exception &exception) {
 		report_exception(exception);
 		result = -1;
-	}
-
-	if (initialized_steam) {
-		SteamAPI_Shutdown();
 	}
 
 	clean_output();

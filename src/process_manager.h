@@ -3,38 +3,21 @@
 #include <QApplication>
 #include <QProcess>
 
+class achievement_manager;
+
 class process_manager final : public QObject
 {
 	Q_OBJECT
 
 public:
-	process_manager()
-	{
-		this->process = new QProcess;
-		connect(this->process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &process_manager::on_finished);
-	}
+	process_manager();
+	~process_manager();
 
-	~process_manager()
-	{
-		if (this->process != nullptr) {
-			this->process->deleteLater();
-		}
-	}
+	Q_INVOKABLE void start();
 
-	Q_INVOKABLE void start()
-	{
-		this->process->start("wyrmsun", QStringList());
-	}
-
-	void on_finished(const int exit_code, const QProcess::ExitStatus exit_status)
-	{
-		Q_UNUSED(exit_status)
-
-		QMetaObject::invokeMethod(QApplication::instance(), [exit_code] { QApplication::exit(exit_code); }, Qt::QueuedConnection);
-		this->process->deleteLater();
-		this->process = nullptr;
-	}
+	void on_finished(const int exit_code, const QProcess::ExitStatus exit_status);
 
 private:
 	QProcess *process = nullptr;
+	std::unique_ptr<achievement_manager> achievement_manager;
 };

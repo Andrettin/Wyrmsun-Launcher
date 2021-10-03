@@ -22,6 +22,7 @@ include_directories(
 set(wyrmsun_launcher_SRCS
 	src/achievement_manager.cpp
 	src/main.cpp
+	src/process_manager.cpp
 	src/launcher.rc
 )
 
