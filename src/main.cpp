@@ -5,6 +5,7 @@
 #include "steam/steam_api.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QDir>
 #include <QIcon>
 #include <QQmlApplicationEngine>
@@ -55,6 +56,17 @@ int main(int argc, char **argv)
 	int result = 0;
 
 	try {
+		QCommandLineParser cmd_parser;
+
+		const QCommandLineOption clear_option("clear-achievements", "Clear achievements, instead of setting them.");
+		cmd_parser.addOption(clear_option);
+		cmd_parser.process(*QApplication::instance());
+
+		bool clear_achievements = false;
+		if (cmd_parser.isSet(clear_option)) {
+			clear_achievements = true;
+		}
+
 		const std::filesystem::path root_path = std::filesystem::current_path();
 		const QString root_path_qstr = QString::fromUtf8(reinterpret_cast<const char *>(root_path.u8string().c_str()));
 
@@ -83,7 +95,7 @@ int main(int argc, char **argv)
 
 		QQmlApplicationEngine engine;
 
-		process_manager *process_manager = new ::process_manager;
+		process_manager *process_manager = new ::process_manager(clear_achievements);
 		engine.rootContext()->setContextProperty("process_manager", process_manager);
 
 		engine.addImportPath(root_path_qstr + "/libraries/qml");

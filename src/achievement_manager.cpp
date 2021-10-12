@@ -56,11 +56,21 @@ void achievement_manager::check_achievements()
 				continue;
 			}
 
-			if (!unlocked) {
-				result = user_stats->SetAchievement(key_str.c_str());
+			if (this->clear) {
+				if (unlocked) {
+					result = user_stats->ClearAchievement(key_str.c_str());
 
-				if (!result) {
-					log_error("Failed to unlock achievement \"" + key_str + "\" on Steam.");
+					if (!result) {
+						log_error("Failed to clear achievement \"" + key_str + "\" on Steam.");
+					}
+				}
+			} else {
+				if (!unlocked) {
+					result = user_stats->SetAchievement(key_str.c_str());
+
+					if (!result) {
+						log_error("Failed to unlock achievement \"" + key_str + "\" on Steam.");
+					}
 				}
 			}
 		}

@@ -13,7 +13,7 @@ public:
 
 	static std::filesystem::path get_achievements_filepath();
 
-	achievement_manager()
+	explicit achievement_manager(const bool clear) : clear(clear)
 	{
 	}
 
@@ -39,4 +39,5 @@ public:
 private:
 	QTimer *timer = nullptr;
 	std::filesystem::file_time_type previous_last_modified; //the last modified time for the previous achievements check
+	bool clear = false;
 };

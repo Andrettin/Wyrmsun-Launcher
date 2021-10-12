@@ -10,7 +10,7 @@ class process_manager final : public QObject
 	Q_OBJECT
 
 public:
-	process_manager();
+	explicit process_manager(const bool clear_achievements);
 	~process_manager();
 
 	Q_INVOKABLE void start();
@@ -20,4 +20,5 @@ public:
 private:
 	QProcess *process = nullptr;
 	std::unique_ptr<achievement_manager> achievement_manager;
+	bool clear_achievements = false;
 };

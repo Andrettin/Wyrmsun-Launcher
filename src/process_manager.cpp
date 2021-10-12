@@ -2,7 +2,7 @@
 
 #include "achievement_manager.h"
 
-process_manager::process_manager()
+process_manager::process_manager(const bool clear_achievements) : clear_achievements(clear_achievements)
 {
 	this->process = new QProcess;
 	connect(this->process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &process_manager::on_finished);
@@ -17,7 +17,7 @@ process_manager::~process_manager()
 
 void process_manager::start()
 {
-	this->achievement_manager = std::make_unique<::achievement_manager>();
+	this->achievement_manager = std::make_unique<::achievement_manager>(clear_achievements);
 	this->achievement_manager->check_achievements();
 	this->process->start("wyrmsun", QStringList());
 }
