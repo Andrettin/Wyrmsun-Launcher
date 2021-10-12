@@ -71,6 +71,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(WIN32 AND MSVC)
 	#enable parallel compilation
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 # Compile launcher
@@ -79,6 +81,9 @@ add_executable(wyrmsun_launcher WIN32 ${wyrmsun_launcher_SRCS} ${wyrmsun_launche
 
 if (MSVC)
 	target_compile_options(wyrmsun_launcher PRIVATE /W4 /w44800 /wd4458)
+	
+	#ignore linker warning due to missing .pdb files, as otherwise a stream of warnings comes from linking external libraries
+	set_target_properties(wyrmsun_launcher PROPERTIES LINK_FLAGS "/ignore:4099")
 endif()
 
 target_link_libraries(wyrmsun_launcher ${wyrmsun_launcher_LIBS})
