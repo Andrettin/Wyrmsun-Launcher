@@ -22,12 +22,14 @@ include_directories(
 set(wyrmsun_launcher_SRCS
 	src/achievement_manager.cpp
 	src/main.cpp
+	src/mod_manager.cpp
 	src/process_manager.cpp
 	src/launcher.rc
 )
 
 set(wyrmsun_launcher_HDRS
 	src/achievement_manager.h
+	src/mod_manager.h
 	src/process_manager.h
 	src/util.h
 )

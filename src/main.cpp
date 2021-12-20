@@ -1,3 +1,4 @@
+#include "mod_manager.h"
 #include "process_manager.h"
 #include "util.h"
 
@@ -97,6 +98,9 @@ int main(int argc, char **argv)
 
 		process_manager *process_manager = new ::process_manager(clear_achievements);
 		engine.rootContext()->setContextProperty("process_manager", process_manager);
+
+		mod_manager *mod_manager = new ::mod_manager;
+		engine.rootContext()->setContextProperty("mod_manager", mod_manager);
 
 		engine.addImportPath(root_path_qstr + "/libraries/qml");
 
