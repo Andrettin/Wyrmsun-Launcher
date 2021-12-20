@@ -3,6 +3,8 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QStandardPaths>
+#include <QString>
+#include <QUrl>
 
 #include <filesystem>
 #include <iostream>
@@ -130,4 +132,18 @@ inline std::filesystem::path get_error_log_filepath()
 	std::filesystem::path filepath = get_logs_path() / "launcher_error.log";
 	filepath.make_preferred();
 	return filepath;
+}
+
+inline std::filesystem::path to_path(const QString &path_str)
+{
+#ifdef USE_WIN32
+	return std::filesystem::path(path_str.toStdU16String());
+#else
+	return std::filesystem::path(path_str.toStdString());
+#endif
+}
+
+inline std::filesystem::path to_path(const QUrl &url)
+{
+	return to_path(url.toLocalFile());
 }
