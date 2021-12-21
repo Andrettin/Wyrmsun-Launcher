@@ -11,6 +11,7 @@
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QTimer>
 
 #include <filesystem>
 
@@ -113,6 +114,14 @@ int main(int argc, char **argv)
 				}
 			}, Qt::QueuedConnection);
 		engine.load(url);
+
+		//run the Steam API callbacks intermittently
+		QTimer run_callbacks_timer;
+		run_callbacks_timer.setInterval(100);
+		QObject::connect(&run_callbacks_timer, &QTimer::timeout, []() {
+			SteamAPI_RunCallbacks();
+		});
+		run_callbacks_timer.start();
 
 		result = app.exec();
 
