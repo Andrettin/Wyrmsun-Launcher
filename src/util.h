@@ -10,6 +10,7 @@
 #include <iostream>
 
 constexpr const char *date_string_format = "yyyy.MM.dd hh:mm:ss";
+constexpr const uint32_t app_id = 370070;
 
 inline void log(const std::string_view &message)
 {

@@ -126,6 +126,7 @@ int main(int argc, char **argv)
 		result = app.exec();
 
 		process_manager->deleteLater();
+		mod_manager->deleteLater();
 
 		if (initialized_steam) {
 			SteamAPI_Shutdown();
