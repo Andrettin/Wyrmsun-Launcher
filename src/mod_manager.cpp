@@ -131,7 +131,46 @@ void mod_manager::update_mod_content()
 		throw std::runtime_error("Failed to set item content.");
 	}
 
-	emit modUploadCompleted();
+	const SteamAPICall_t call_handle = ugc->SubmitItemUpdate(update_handle, nullptr);
+	this->mod_data->update_item_call_result.Set(call_handle, this, &mod_manager::on_item_updated);
+}
+
+void mod_manager::process_call_result_code(const EResult result_code)
+{
+	switch (result_code) {
+		case k_EResultOK:
+			break;
+		case k_EResultFail:
+			throw std::runtime_error("Failed.");
+		case k_EResultInvalidParam:
+			throw std::runtime_error("Invalid parameter.");
+		case k_EResultFileNotFound:
+			throw std::runtime_error("File not found.");
+		case k_EResultDuplicateName:
+			throw std::runtime_error("An item with that name already exists.");
+		case k_EResultAccessDenied:
+			throw std::runtime_error("Access denied.");
+		case k_EResultTimeout:
+			throw std::runtime_error("Timeout.");
+		case k_EResultBanned:
+			throw std::runtime_error("Banned.");
+		case k_EResultServiceUnavailable:
+			throw std::runtime_error("Service unavailable.");
+		case k_EResultNotLoggedOn:
+			throw std::runtime_error("Not logged into Steam.");
+		case k_EResultInsufficientPrivilege:
+			throw std::runtime_error("Insufficient privilege.");
+		case k_EResultLimitExceeded:
+			throw std::runtime_error("Steam Cloud limit exceeded. Please remove some items and try again.");
+		case k_EResultDuplicateRequest:
+			throw std::runtime_error("Duplicate request.");
+		case k_EResultLockingFailed:
+			throw std::runtime_error("Failed to acquire UGC lock.");
+		case k_EResultServiceReadOnly:
+			throw std::runtime_error("The user is temporarily unable to upload new content to Steam.");
+		default:
+			throw std::runtime_error("Error code: " + std::to_string(static_cast<int>(result_code)) + ".");
+	}
 }
 
 void mod_manager::on_item_created(CreateItemResult_t *result, const bool io_failure)
@@ -141,36 +180,7 @@ void mod_manager::on_item_created(CreateItemResult_t *result, const bool io_fail
 			throw std::runtime_error("I/O failure occurred.");
 		}
 
-		if (result->m_eResult != k_EResultOK) {
-			switch (result->m_eResult) {
-				case k_EResultInsufficientPrivilege:
-					throw std::runtime_error("Insufficient privilege.");
-				case k_EResultBanned:
-					throw std::runtime_error("Banned.");
-				case k_EResultTimeout:
-					throw std::runtime_error("Timeout.");
-				case k_EResultNotLoggedOn:
-					throw std::runtime_error("Not logged into Steam.");
-				case k_EResultServiceUnavailable:
-					throw std::runtime_error("Service unavailable.");
-				case k_EResultInvalidParam:
-					throw std::runtime_error("Invalid parameter.");
-				case k_EResultAccessDenied:
-					throw std::runtime_error("Access denied.");
-				case k_EResultLimitExceeded:
-					throw std::runtime_error("Steam Cloud limit exceeded. Please remove some items and try again.");
-				case k_EResultFileNotFound:
-					throw std::runtime_error("File not found.");
-				case k_EResultDuplicateRequest:
-					throw std::runtime_error("Duplicate request.");
-				case k_EResultDuplicateName:
-					throw std::runtime_error("An item with that name already exists.");
-				case k_EResultServiceReadOnly:
-					throw std::runtime_error("The user is temporarily unable to upload new content to Steam.");
-				default:
-					throw std::runtime_error("Error code: " + std::to_string(static_cast<int>(result->m_eResult)) + ".");
-			}
-		}
+		this->process_call_result_code(result->m_eResult);
 
 		if (result->m_bUserNeedsToAcceptWorkshopLegalAgreement) {
 			throw std::runtime_error("The user needs to accept the Steam Workshop legal agreement.");
@@ -181,6 +191,27 @@ void mod_manager::on_item_created(CreateItemResult_t *result, const bool io_fail
 		this->mod_data->published_file_id = result->m_nPublishedFileId;
 
 		this->update_mod_content();
+	} catch (const std::exception &exception) {
+		report_exception(exception);
+
+		emit modUploadFailed(exception.what());
+	}
+}
+
+void mod_manager::on_item_updated(SubmitItemUpdateResult_t *result, const bool io_failure)
+{
+	try {
+		if (io_failure) {
+			throw std::runtime_error("I/O failure occurred.");
+		}
+
+		this->process_call_result_code(result->m_eResult);
+
+		if (result->m_bUserNeedsToAcceptWorkshopLegalAgreement) {
+			throw std::runtime_error("The user needs to accept the Steam Workshop legal agreement.");
+		}
+
+		emit modUploadCompleted();
 	} catch (const std::exception &exception) {
 		report_exception(exception);
 

@@ -16,6 +16,7 @@ struct mod_data final
 	std::string name;
 	uint64_t published_file_id = 0;
 	CCallResult<mod_manager, CreateItemResult_t> create_item_call_result;
+	CCallResult<mod_manager, SubmitItemUpdateResult_t> update_item_call_result;
 };
 
 class mod_manager final : public QObject
@@ -40,8 +41,10 @@ private:
 	void read_mod_id();
 	void write_mod_id(const uint64_t published_file_id);
 	void update_mod_content();
+	void process_call_result_code(const EResult result_code);
 
 	void on_item_created(CreateItemResult_t *result, const bool io_failure);
+	void on_item_updated(SubmitItemUpdateResult_t *result, const bool io_failure);
 
 signals:
 	void modUploadCompleted();
