@@ -4,6 +4,8 @@
 
 #include "steam/isteamugc.h"
 
+#include <QSettings>
+
 #include <filesystem>
 #include <fstream>
 
@@ -57,25 +59,12 @@ void mod_manager::parse_mod()
 		throw std::runtime_error("The module.txt file is missing for the mod.");
 	}
 
-	std::ifstream ifstream(mod_filepath);
+	const QString mod_filepath_qstr = to_qstring(mod_filepath);
+	const QSettings mod_info(mod_filepath_qstr, QSettings::IniFormat);
 
-	if (!ifstream) {
-		throw std::runtime_error("Failed to open the module.txt file for reading.");
-	}
-
-	std::string line;
-	while (std::getline(ifstream, line)) {
-		std::vector<std::string> tokens = split_string(line, ' ');
-
-		if (tokens.size() < 3) {
-			continue;
-		}
-
-		const std::string &key = tokens.at(0);
-		const std::string &value = tokens.at(2);
-
+	for (const QString &key : mod_info.childKeys()) {
 		if (key == "name") {
-			this->mod_data->name = value;
+			this->mod_data->name = mod_info.value(key).toString().toStdString();
 		}
 	}
 
