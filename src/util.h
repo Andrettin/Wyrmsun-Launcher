@@ -142,6 +142,11 @@ inline std::string to_string(const std::filesystem::path &path)
 	return std::string(u8str.begin(), u8str.end());
 }
 
+inline QString to_qstring(const std::filesystem::path &path)
+{
+	return QString::fromStdString(to_string(path));
+}
+
 inline std::filesystem::path to_path(const QString &path_str)
 {
 #ifdef USE_WIN32

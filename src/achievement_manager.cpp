@@ -31,10 +31,7 @@ void achievement_manager::check_achievements()
 			return;
 		}
 
-		const std::u8string achievements_filepath_u8str = achievements_filepath.u8string();
-		const std::string achievements_filepath_str(achievements_filepath_u8str.begin(), achievements_filepath_u8str.end());
-
-		const QString achievements_filepath_qstr = QString::fromStdString(achievements_filepath_str);
+		const QString achievements_filepath_qstr = to_qstring(achievements_filepath);
 		const QSettings data(achievements_filepath_qstr, QSettings::IniFormat);
 
 		ISteamUserStats *user_stats = SteamUserStats();

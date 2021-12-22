@@ -23,8 +23,7 @@ static void init_output()
 		std::filesystem::remove(error_log_path);
 	}
 
-	const std::u8string path_u8str = error_log_path.u8string();
-	const std::string path_str(path_u8str.begin(), path_u8str.end());
+	const std::string path_str = to_string(error_log_path);
 
 	const FILE *error_log_file = freopen(path_str.c_str(), "a", stderr);
 	if (error_log_file == nullptr) {
