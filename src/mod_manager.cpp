@@ -22,6 +22,12 @@ QString mod_manager::upload_mod(const QUrl &mod_dir_url)
 
 		this->parse_mod();
 
+		ISteamUGC *ugc = SteamUGC();
+
+		if (ugc == nullptr) {
+			throw std::runtime_error("No Steam user information provided.");
+		}
+
 		const std::filesystem::path mod_id_filepath = this->get_mod_id_filepath();
 		if (std::filesystem::exists(mod_id_filepath)) {
 			this->read_mod_id();
@@ -32,7 +38,6 @@ QString mod_manager::upload_mod(const QUrl &mod_dir_url)
 			return QString();
 		}
 
-		ISteamUGC *ugc = SteamUGC();
 		const SteamAPICall_t call_handle = ugc->CreateItem(app_id, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
 		this->mod_data->create_item_call_result.Set(call_handle, this, &mod_manager::on_item_created);
 
