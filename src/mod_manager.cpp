@@ -5,84 +5,185 @@
 #include "steam/isteamugc.h"
 
 #include <filesystem>
-#include <thread>
+#include <fstream>
 
 QString mod_manager::upload_mod(const QUrl &mod_dir_url)
 {
-	const std::filesystem::path mod_dir_path = to_path(mod_dir_url);
+	this->mod_data = std::make_unique<::mod_data>();
 
-	if (!std::filesystem::exists(mod_dir_path)) {
-		return "The mod directory does not exist.";
+	try {
+		const std::filesystem::path mod_dir_path = to_path(mod_dir_url);
+
+		if (!std::filesystem::exists(mod_dir_path)) {
+			throw std::runtime_error("The mod directory does not exist.");
+		}
+
+		this->mod_data->path = mod_dir_path;
+
+		this->parse_mod();
+
+		const std::filesystem::path mod_id_filepath = this->get_mod_id_filepath();
+		if (std::filesystem::exists(mod_id_filepath)) {
+			this->read_mod_id();
+
+			//if we already have a mod ID, we don't need to create the item, just update its contents
+			this->update_mod_content();
+
+			return QString();
+		}
+
+		ISteamUGC *ugc = SteamUGC();
+		const SteamAPICall_t call_handle = ugc->CreateItem(app_id, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
+		this->mod_data->create_item_call_result.Set(call_handle, this, &mod_manager::on_item_created);
+
+		return QString();
+	} catch (const std::exception &exception) {
+		report_exception(exception);
+
+		return exception.what();
+	}
+}
+
+void mod_manager::parse_mod()
+{
+	const std::filesystem::path mod_filepath = this->get_mod_filepath();
+
+	if (!std::filesystem::exists(mod_filepath)) {
+		throw std::runtime_error("The module.txt file is missing for the mod.");
 	}
 
-	const std::filesystem::path mod_file_path = mod_dir_path / "module.txt";
+	std::ifstream ifstream(mod_filepath);
 
-	if (!std::filesystem::exists(mod_file_path)) {
-		return "The module.txt file is missing for the mod.";
+	if (!ifstream) {
+		throw std::runtime_error("Failed to open the module.txt file for reading.");
 	}
+
+	std::string line;
+	while (std::getline(ifstream, line)) {
+		std::vector<std::string> tokens = split_string(line, ' ');
+
+		if (tokens.size() < 3) {
+			continue;
+		}
+
+		const std::string &key = tokens.at(0);
+		const std::string &value = tokens.at(2);
+
+		if (key == "name") {
+			this->mod_data->name = value;
+		}
+	}
+
+	if (this->mod_data->name.empty()) {
+		throw std::runtime_error("The mod has no name.");
+	}
+}
+
+void mod_manager::read_mod_id()
+{
+	const std::filesystem::path mod_id_filepath = this->get_mod_id_filepath();
+
+	std::ifstream ifstream(mod_id_filepath);
+
+	if (!ifstream) {
+		throw std::runtime_error("Failed to open the mod_id.txt file for reading.");
+	}
+
+	std::string mod_id_str;
+	ifstream >> mod_id_str;
+
+	if (mod_id_str.empty()) {
+		throw std::runtime_error("The mod_id.txt file does not contain an ID.");
+	}
+
+	this->mod_data->published_file_id = std::stoull(mod_id_str);
+}
+
+void mod_manager::write_mod_id(const uint64_t published_file_id)
+{
+	const std::filesystem::path mod_id_filepath = this->get_mod_id_filepath();
+
+	std::ofstream ofstream(mod_id_filepath);
+
+	if (!ofstream) {
+		throw std::runtime_error("Failed to open the mod_id.txt file for writing.");
+	}
+
+	ofstream << published_file_id;
+}
+
+void mod_manager::update_mod_content()
+{
+	const uint64_t mod_id = this->mod_data->published_file_id;
 
 	ISteamUGC *ugc = SteamUGC();
-	const SteamAPICall_t call_handle = ugc->CreateItem(app_id, EWorkshopFileType::k_EWorkshopFileTypeCommunity);
-	this->create_item_call_result.Set(call_handle, this, &mod_manager::on_item_created);
+	const UGCUpdateHandle_t update_handle = ugc->StartItemUpdate(app_id, mod_id);
 
-	return QString();
+	bool success = ugc->SetItemTitle(update_handle, this->mod_data->name.c_str());
+
+	if (!success) {
+		throw std::runtime_error("Failed to set item title.");
+	}
+	
+	success = ugc->SetItemContent(update_handle, to_string(this->mod_data->path).c_str());
+
+	if (!success) {
+		throw std::runtime_error("Failed to set item content.");
+	}
+
+	emit modUploadCompleted();
 }
 
 void mod_manager::on_item_created(CreateItemResult_t *result, const bool io_failure)
 {
-	if (io_failure) {
-		emit itemCreationFailed("I/O failure occurred.");
-		return;
-	}
-
-	if (result->m_eResult != k_EResultOK) {
-		QString error_message;
-
-		switch (result->m_eResult) {
-			case k_EResultInsufficientPrivilege:
-				error_message = "Insufficient privilege.";
-				break;
-			case k_EResultBanned:
-				error_message = "Banned.";
-				break;
-			case k_EResultTimeout:
-				error_message = "Timeout.";
-				break;
-			case k_EResultNotLoggedOn:
-				error_message = "Not logged into Steam.";
-				break;
-			case k_EResultServiceUnavailable:
-				error_message = "Service unavailable.";
-				break;
-			case k_EResultInvalidParam:
-				error_message = "Invalid parameter.";
-				break;
-			case k_EResultAccessDenied:
-				error_message = "Access denied.";
-				break;
-			case k_EResultLimitExceeded:
-				error_message = "Steam Cloud limit exceeded. Please remove some items and try again.";
-				break;
-			case k_EResultFileNotFound:
-				error_message = "File not found.";
-				break;
-			case k_EResultDuplicateRequest:
-				error_message = "Duplicate request.";
-				break;
-			case k_EResultDuplicateName:
-				error_message = "An item with that name already exists.";
-				break;
-			case k_EResultServiceReadOnly:
-				error_message = "User cannot upload new content to Steam.";
-				break;
-			default:
-				error_message = "Error code: " + QString::number(static_cast<int>(result->m_eResult)) + ".";
-				break;
+	try {
+		if (io_failure) {
+			throw std::runtime_error("I/O failure occurred.");
 		}
 
-		emit itemCreationFailed(error_message);
-		return;
-	}
+		if (result->m_eResult != k_EResultOK) {
+			switch (result->m_eResult) {
+				case k_EResultInsufficientPrivilege:
+					throw std::runtime_error("Insufficient privilege.");
+				case k_EResultBanned:
+					throw std::runtime_error("Banned.");
+				case k_EResultTimeout:
+					throw std::runtime_error("Timeout.");
+				case k_EResultNotLoggedOn:
+					throw std::runtime_error("Not logged into Steam.");
+				case k_EResultServiceUnavailable:
+					throw std::runtime_error("Service unavailable.");
+				case k_EResultInvalidParam:
+					throw std::runtime_error("Invalid parameter.");
+				case k_EResultAccessDenied:
+					throw std::runtime_error("Access denied.");
+				case k_EResultLimitExceeded:
+					throw std::runtime_error("Steam Cloud limit exceeded. Please remove some items and try again.");
+				case k_EResultFileNotFound:
+					throw std::runtime_error("File not found.");
+				case k_EResultDuplicateRequest:
+					throw std::runtime_error("Duplicate request.");
+				case k_EResultDuplicateName:
+					throw std::runtime_error("An item with that name already exists.");
+				case k_EResultServiceReadOnly:
+					throw std::runtime_error("The user is temporarily unable to upload new content to Steam.");
+				default:
+					throw std::runtime_error("Error code: " + std::to_string(static_cast<int>(result->m_eResult)) + ".");
+			}
+		}
 
-	emit itemCreated(result->m_nPublishedFileId);
+		if (result->m_bUserNeedsToAcceptWorkshopLegalAgreement) {
+			throw std::runtime_error("The user needs to accept the Steam Workshop legal agreement.");
+		}
+
+		this->write_mod_id(result->m_nPublishedFileId);
+
+		this->mod_data->published_file_id = result->m_nPublishedFileId;
+
+		this->update_mod_content();
+	} catch (const std::exception &exception) {
+		report_exception(exception);
+
+		emit modUploadFailed(exception.what());
+	}
 }

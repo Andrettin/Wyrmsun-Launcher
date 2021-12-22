@@ -6,6 +6,18 @@
 #include <QObject>
 #include <QUrl>
 
+#include <filesystem>
+
+class mod_manager;
+
+struct mod_data final
+{
+	std::filesystem::path path;
+	std::string name;
+	uint64_t published_file_id = 0;
+	CCallResult<mod_manager, CreateItemResult_t> create_item_call_result;
+};
+
 class mod_manager final : public QObject
 {
 	Q_OBJECT
@@ -14,12 +26,27 @@ public:
 	Q_INVOKABLE QString upload_mod(const QUrl &mod_dir_url);
 
 private:
+	std::filesystem::path get_mod_filepath() const
+	{
+		return this->mod_data->path / "module.txt";
+	}
+
+	std::filesystem::path get_mod_id_filepath() const
+	{
+		return this->mod_data->path / "mod_id.txt";
+	}
+
+	void parse_mod();
+	void read_mod_id();
+	void write_mod_id(const uint64_t published_file_id);
+	void update_mod_content();
+
 	void on_item_created(CreateItemResult_t *result, const bool io_failure);
 
 signals:
-	void itemCreated(const uint64_t published_file_id);
-	void itemCreationFailed(const QString &error_message);
+	void modUploadCompleted();
+	void modUploadFailed(const QString &error_message);
 
 private:
-	CCallResult<mod_manager, CreateItemResult_t> create_item_call_result;
+	std::unique_ptr<mod_data> mod_data;
 };
