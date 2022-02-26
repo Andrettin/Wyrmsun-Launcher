@@ -125,6 +125,15 @@ void mod_manager::update_mod_content()
 		throw std::runtime_error("Failed to set item content.");
 	}
 
+	const std::filesystem::path image_filepath = this->get_mod_image_filepath();
+	if (!image_filepath.empty()) {
+		success = ugc->SetItemPreview(update_handle, to_string(image_filepath).c_str());
+
+		if (!success) {
+			throw std::runtime_error("Failed to set item preview image.");
+		}
+	}
+
 	const SteamAPICall_t call_handle = ugc->SubmitItemUpdate(update_handle, nullptr);
 	this->mod_data->update_item_call_result.Set(call_handle, this, &mod_manager::on_item_updated);
 }

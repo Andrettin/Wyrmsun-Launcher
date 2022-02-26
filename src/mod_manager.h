@@ -37,6 +37,31 @@ private:
 		return this->mod_data->path / "mod_id.txt";
 	}
 
+	std::filesystem::path get_mod_image_filepath() const
+	{
+		std::filesystem::path filepath = this->mod_data->path / "module.png";
+		if (std::filesystem::exists(filepath)) {
+			return filepath;
+		}
+
+		filepath.replace_extension(".jpg");
+		if (std::filesystem::exists(filepath)) {
+			return filepath;
+		}
+
+		filepath.replace_extension(".jpeg");
+		if (std::filesystem::exists(filepath)) {
+			return filepath;
+		}
+
+		filepath.replace_extension(".gif");
+		if (std::filesystem::exists(filepath)) {
+			return filepath;
+		}
+
+		return std::filesystem::path();
+	}
+
 	void parse_mod();
 	void read_mod_id();
 	void write_mod_id(const uint64_t published_file_id);
